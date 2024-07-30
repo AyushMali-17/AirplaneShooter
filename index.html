@@ -96,8 +96,129 @@
             }
         }
 
+        function createClouds() {
+            for (let i = 0; i < CLOUD_COUNT; i++) {
+                const geometry = new THREE.SphereGeometry(0.5, 8, 8);
+                const material = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 });
+                const cloud = new THREE.Mesh(geometry, material);
+                cloud.position.set(
+                    Math.random() * 40 - 20,
+                    Math.random() * 10,
+                    Math.random() * -40 - 10
+                );
+                scene.add(cloud);
+                clouds.push(cloud);
+            }
+        }
 
-  
+        function createLighting() {
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+        }
+
+        function onKeyDown(event) {
+            switch(event.key) {
+                case 'w': player.position.y += 0.1; break;
+                case 's': player.position.y -= 0.1; break;
+                case 'a': player.position.x -= 0.1; break;
+                case 'd': player.position.x += 0.1; break;
+                case ' ': shootMissile(); break;
+            }
+        }
+
+        function onKeyUp(event) {
+            // Add any keyup logic if needed
+        }
+
+        function shootMissile() {
+            const geometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const material = new THREE.MeshPhongMaterial({ color: 0xffff00 });
+            const missile = new THREE.Mesh(geometry, material);
+            missile.position.copy(player.position);
+            scene.add(missile);
+            missiles.push(missile);
+        }
+
+        function updateMissiles() {
+            for (let i = missiles.length - 1; i >= 0; i--) {
+                missiles[i].position.z -= 0.5;
+                if (missiles[i].position.z < -50) {
+                    scene.remove(missiles[i]);
+                    missiles.splice(i, 1);
+                } else {
+                    checkMissileCollisions(missiles[i]);
+                }
+            }
+        }
+
+        function checkMissileCollisions(missile) {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                if (missile.position.distanceTo(enemies[i].position) < 0.5) {
+                    scene.remove(enemies[i]);
+                    enemies.splice(i, 1);
+                    scene.remove(missile);
+                    missiles.splice(missiles.indexOf(missile), 1);
+                    score += 100;
+                    document.getElementById('score').textContent = `Score: ${score}`;
+                    createNewEnemy();
+                    break;
+                }
+            }
+        }
+
+        function createNewEnemy() {
+            const geometry = new THREE.ConeGeometry(0.2, 1, 4);
+            const material = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+            const enemy = new THREE.Mesh(geometry, material);
+            enemy.rotation.x = -Math.PI / 2;
+            enemy.position.set(
+                Math.random() * 10 - 5,
+                Math.random() * 5,
+                -30
+            );
+            scene.add(enemy);
+            enemies.push(enemy);
+        }
+
+        function updateEnemies() {
+            enemies.forEach(enemy => {
+                enemy.position.z += 0.05;
+                if (enemy.position.z > 5) {
+                    enemy.position.z = -30;
+                }
+            });
+        }
+
+        function updateClouds() {
+            clouds.forEach(cloud => {
+                cloud.position.z += 0.02;
+                if (cloud.position.z > 5) {
+                    cloud.position.z = -40;
+                    cloud.position.x = Math.random() * 40 - 20;
+                    cloud.position.y = Math.random() * 10;
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updateMissiles();
+            updateEnemies();
+            updateClouds();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
     </script>
 </body>
 </html>
